@@ -14,6 +14,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import fetchOanda from './fetchOanda';
 
 class AppUpdater {
   constructor() {
@@ -25,10 +26,14 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+ipcMain.on('ipc-oanda-margin', async (event) => {
+  const value = await fetchOanda({ currency: 'USD/JPY' });
+  console.log(value);
+  event.reply('ipc-oanda-margin', {
+    currency: 'USD/JPY',
+    ...value,
+    lastUpdated: new Date(),
+  });
 });
 
 if (process.env.NODE_ENV === 'production') {
