@@ -5,7 +5,8 @@ import { CurrencyPair } from 'types';
 import AppContext from './AppContext';
 
 function Margins() {
-  const { items, addCurrencyPair, removeCurrencyPair } = useContext(AppContext);
+  const { items, addCurrencyPair, removeCurrencyPair, update } =
+    useContext(AppContext);
   return (
     <div>
       <div className="flex justify-between">
@@ -18,6 +19,11 @@ function Margins() {
               <th>通貨ペア</th>
               <th>レート</th>
               <th>最大注文数量</th>
+              <td className="p-0">
+                <button type="button" onClick={() => update()}>
+                  更新
+                </button>
+              </td>
             </tr>
           </thead>
           <tbody>

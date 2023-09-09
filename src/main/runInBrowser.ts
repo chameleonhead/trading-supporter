@@ -24,11 +24,25 @@ const runInBrowser = async <T>(
     await currentTask.promise;
   }
   const controller = new AbortController();
-  currentTask = {
-    promise: func(browser, page, controller),
-    controller,
-  };
-  return currentTask.promise;
+  try {
+    currentTask = {
+      promise: func(browser, page, controller),
+      controller,
+    };
+    return await currentTask.promise;
+  } catch (e) {
+    if (controller.signal.aborted) {
+      throw e;
+    }
+    await page.reload();
+    currentTask = {
+      promise: func(browser, page, controller),
+      controller,
+    };
+    return await currentTask.promise;
+  } finally {
+    currentTask = null;
+  }
 };
 
 export default runInBrowser;

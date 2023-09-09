@@ -12,6 +12,7 @@ type AppContextType = {
   amount: number;
   addCurrencyPair: (currencyPair: CurrencyPair) => void;
   removeCurrencyPair: (currencyPair: CurrencyPair) => void;
+  update: () => void;
 };
 
 type MarginPreference = {
@@ -24,6 +25,7 @@ const AppContext = createContext<AppContextType>({
   amount: 0,
   addCurrencyPair: () => {},
   removeCurrencyPair: () => {},
+  update: () => {},
 });
 
 export type AppContextProviderProps = {
@@ -62,22 +64,36 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
       amount: marginPreference.amount,
     }));
     // calling IPC exposed from preload script
-    window.electron.ipcRenderer.once('fetch-margin-response', (...args) => {
-      // eslint-disable-next-line no-console
-      console.log('on-response', args);
-      const results = args as MarginResult[];
-      setContext((c) => ({
-        items: c.items.map((item) => ({
-          ...item,
-          result: results.find((result) => result.currency === item.currency),
-        })),
-        amount: c.amount,
-      }));
-    });
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'fetch-margin-response',
+      (...args) => {
+        if (args.length === 0) {
+          return;
+        }
+        if ((args[0] as { error: string }).error) {
+          // eslint-disable-next-line no-console
+          console.error((args[0] as { error: string }).error);
+          return;
+        }
+        // eslint-disable-next-line no-console
+        console.log('on-response', args);
+        const results = args as MarginResult[];
+        setContext((c) => ({
+          items: c.items.map((item) => ({
+            ...item,
+            result: results.find((result) => result.currency === item.currency),
+          })),
+          amount: c.amount,
+        }));
+      }
+    );
     window.electron.ipcRenderer.sendMessage(
       'fetch-margin-request',
       ...requests
     );
+    return () => {
+      unsubscribe();
+    };
   }, [marginPreference]);
   const value = useMemo(() => {
     return {
@@ -101,6 +117,16 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
           localStorage.setItem('margin-preference', JSON.stringify(newPref));
           return newPref;
         });
+      },
+      update: () => {
+        const requests = context.items.map((item) => ({
+          currency: item.currency,
+          amount: item.amount,
+        }));
+        window.electron.ipcRenderer.sendMessage(
+          'fetch-margin-request',
+          ...requests
+        );
       },
     };
   }, [context]);
