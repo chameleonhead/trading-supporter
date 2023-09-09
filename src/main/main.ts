@@ -12,6 +12,7 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { MarginResult } from 'types';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import runInBrowser from './runInBrowser';
@@ -30,8 +31,14 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.on('fetch-margin-request', async (event, ...args) => {
   console.log('on-request', args);
   if (args.length > 0) {
-    const results = await runInBrowser((page) => {
-      return Promise.all(args.map((req) => fetchOanda(page, req)));
+    const results = await runInBrowser(async (_, page) => {
+      const r = [] as MarginResult[];
+      // eslint-disable-next-line no-restricted-syntax
+      for (const arg of args) {
+        // eslint-disable-next-line no-await-in-loop
+        r.push(await fetchOanda(page, arg));
+      }
+      return r;
     });
     event.reply('fetch-margin-response', ...results);
   }

@@ -16,12 +16,11 @@ body {
   overflow-y: hidden;
   display: flex;
   justify-content: center;
-  align-items: center;
 }
 
 button {
-  background-color: white;
-  padding: 10px 20px;
+  background-color: #eee;
+  padding: 5px 20px;
   border-radius: 10px;
   border: none;
   appearance: none;
@@ -54,9 +53,31 @@ a:hover {
   text-decoration: none;
 }
 
-.Hello {
+table {
+  border-collapse: collapse;
+  width: 100%;
+  border: #ccc 1px solid;
+  backdrop-filter: blur(30px);
+}
+
+th,
+td {
+  border: #ccc 1px solid;
+  padding: 6px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.flex {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 20px 0;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.p-0 {
+  padding: 0;
 }

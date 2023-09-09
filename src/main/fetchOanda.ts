@@ -5,7 +5,12 @@ const fetchOanda = async (
   page: Page,
   { currency, amount }: MarginRequest
 ): Promise<MarginResult> => {
-  await page.goto('https://www.oanda.jp/lab-education/margin/');
+  if (page.mainFrame().url() !== 'https://www.oanda.jp/lab-education/margin/') {
+    await page.goto('https://www.oanda.jp/lab-education/margin/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 0,
+    });
+  }
   const frame = page.frameLocator('#oanda-widget-margin0');
   const form = frame.locator('.tab__inner form').nth(0);
   await form.locator('label').filter({ hasText: '法人' }).click();

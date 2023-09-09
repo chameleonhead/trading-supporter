@@ -76,16 +76,24 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     return {
       ...context,
       addCurrencyPair: (currencyPair: CurrencyPair) => {
-        setMarginPreference((pref) => ({
-          ...pref,
-          currencyPairs: [...pref.currencyPairs, currencyPair],
-        }));
+        setMarginPreference((pref) => {
+          const newPref = {
+            ...pref,
+            currencyPairs: [...pref.currencyPairs, currencyPair].sort(),
+          };
+          localStorage.setItem('margin-preference', JSON.stringify(newPref));
+          return newPref;
+        });
       },
       removeCurrencyPair: (currencyPair: CurrencyPair) => {
-        setMarginPreference((pref) => ({
-          ...pref,
-          currencyPairs: pref.currencyPairs.filter((p) => p !== currencyPair),
-        }));
+        setMarginPreference((pref) => {
+          const newPref = {
+            ...pref,
+            currencyPairs: pref.currencyPairs.filter((p) => p !== currencyPair),
+          };
+          localStorage.setItem('margin-preference', JSON.stringify(newPref));
+          return newPref;
+        });
       },
     };
   }, [context]);
