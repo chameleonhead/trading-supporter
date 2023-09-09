@@ -9,7 +9,7 @@ function Margins() {
   return (
     <div>
       <div className="flex justify-between">
-        <h1>証拠金</h1>
+        <h1>最大注文数量</h1>
       </div>
       <div>
         <table>

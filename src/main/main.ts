@@ -31,16 +31,29 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.on('fetch-margin-request', async (event, ...args) => {
   console.log('on-request', args);
   if (args.length > 0) {
-    const results = await runInBrowser(async (_, page) => {
-      const r = [] as MarginResult[];
-      // eslint-disable-next-line no-restricted-syntax
-      for (const arg of args) {
-        // eslint-disable-next-line no-await-in-loop
-        r.push(await fetchOanda(page, arg));
+    const results = await runInBrowser(
+      async (_, page, cancellationController) => {
+        const r = [] as MarginResult[];
+        if (cancellationController.signal.aborted) {
+          return { items: r, aborted: cancellationController.signal.aborted };
+        }
+        // eslint-disable-next-line no-restricted-syntax
+        for (const arg of args) {
+          if (cancellationController.signal.aborted) {
+            return { items: r, aborted: cancellationController.signal.aborted };
+          }
+          // eslint-disable-next-line no-await-in-loop
+          const ret = await fetchOanda(page, arg, cancellationController);
+          if (ret) {
+            r.push(ret);
+          }
+        }
+        return { items: r, aborted: cancellationController.signal.aborted };
       }
-      return r;
-    });
-    event.reply('fetch-margin-response', ...results);
+    );
+    if (!results.aborted) {
+      event.reply('fetch-margin-response', ...results.items);
+    }
   }
 });
 
@@ -84,8 +97,8 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    width: 480,
+    height: 640,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged

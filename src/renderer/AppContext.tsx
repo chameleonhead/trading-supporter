@@ -9,6 +9,7 @@ type MarginResultItem = {
 
 type AppContextType = {
   items: MarginResultItem[];
+  amount: number;
   addCurrencyPair: (currencyPair: CurrencyPair) => void;
   removeCurrencyPair: (currencyPair: CurrencyPair) => void;
 };
@@ -20,6 +21,7 @@ type MarginPreference = {
 
 const AppContext = createContext<AppContextType>({
   items: [],
+  amount: 0,
   addCurrencyPair: () => {},
   removeCurrencyPair: () => {},
 });
@@ -29,8 +31,11 @@ export type AppContextProviderProps = {
 };
 
 export function AppContextProvider({ children }: AppContextProviderProps) {
-  const [context, setContext] = useState<Pick<AppContextType, 'items'>>({
+  const [context, setContext] = useState<
+    Pick<AppContextType, 'items' | 'amount'>
+  >({
     items: [],
+    amount: 0,
   });
   const [marginPreference, setMarginPreference] = useState<MarginPreference>(
     useMemo(() => {
@@ -50,6 +55,7 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
         currency: currencyPair as CurrencyPair,
         amount: marginPreference.amount,
       })),
+      amount: marginPreference.amount,
     });
     const requests = marginPreference.currencyPairs.map((currencyPair) => ({
       currency: currencyPair as CurrencyPair,
@@ -65,6 +71,7 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
           ...item,
           result: results.find((result) => result.currency === item.currency),
         })),
+        amount: c.amount,
       }));
     });
     window.electron.ipcRenderer.sendMessage(

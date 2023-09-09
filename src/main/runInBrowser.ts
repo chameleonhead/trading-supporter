@@ -1,18 +1,34 @@
+import { app } from 'electron';
 import { Browser, Page, chromium } from 'playwright';
 
 const browserPromise = chromium.launch({
-  headless: true,
+  headless: app.isPackaged,
   timeout: 0,
 });
 const pagePromise = browserPromise.then((browser: Browser) =>
   browser.newPage()
 );
+let currentTask: null | { promise: Promise<any>; controller: AbortController } =
+  null;
 const runInBrowser = async <T>(
-  func: (browser: Browser, page: Page) => Promise<T>
+  func: (
+    browser: Browser,
+    page: Page,
+    cancellation: AbortController
+  ) => Promise<T>
 ) => {
   const browser = await browserPromise;
   const page = await pagePromise;
-  return func.apply(undefined, [browser, page]);
+  if (currentTask) {
+    currentTask.controller.abort();
+    await currentTask.promise;
+  }
+  const controller = new AbortController();
+  currentTask = {
+    promise: func(browser, page, controller),
+    controller,
+  };
+  return currentTask.promise;
 };
 
 export default runInBrowser;
