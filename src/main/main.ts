@@ -14,6 +14,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import runInBrowser from './runInBrowser';
 import fetchOanda from './fetchOanda';
 
 class AppUpdater {
@@ -27,7 +28,9 @@ class AppUpdater {
 let mainWindow: BrowserWindow | null = null;
 
 ipcMain.on('ipc-oanda-margin', async (event) => {
-  const value = await fetchOanda({ currency: 'USD/JPY' });
+  const value = await runInBrowser((browser) =>
+    fetchOanda({ browser, currency: 'USD/JPY' })
+  );
   console.log(value);
   event.reply('ipc-oanda-margin', {
     currency: 'USD/JPY',
