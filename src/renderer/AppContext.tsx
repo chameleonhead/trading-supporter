@@ -59,7 +59,13 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     window.electron.ipcRenderer.once('fetch-margin-response', (...args) => {
       // eslint-disable-next-line no-console
       console.log('on-response', args);
-      setContext({ items: args as MarginResultItem[] });
+      const results = args as MarginResult[];
+      setContext((c) => ({
+        items: c.items.map((item) => ({
+          ...item,
+          result: results.find((result) => result.currency === item.currency),
+        })),
+      }));
     });
     window.electron.ipcRenderer.sendMessage(
       'fetch-margin-request',
