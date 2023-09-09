@@ -10,6 +10,7 @@ type MarginResultItem = {
 type AppContextType = {
   items: MarginResultItem[];
   amount: number;
+  setAmount: (amount: number) => void;
   addCurrencyPair: (currencyPair: CurrencyPair) => void;
   removeCurrencyPair: (currencyPair: CurrencyPair) => void;
   update: () => void;
@@ -23,6 +24,7 @@ type MarginPreference = {
 const AppContext = createContext<AppContextType>({
   items: [],
   amount: 0,
+  setAmount: () => {},
   addCurrencyPair: () => {},
   removeCurrencyPair: () => {},
   update: () => {},
@@ -33,12 +35,6 @@ export type AppContextProviderProps = {
 };
 
 export function AppContextProvider({ children }: AppContextProviderProps) {
-  const [context, setContext] = useState<
-    Pick<AppContextType, 'items' | 'amount'>
-  >({
-    items: [],
-    amount: 0,
-  });
   const [marginPreference, setMarginPreference] = useState<MarginPreference>(
     useMemo(() => {
       const marginPreferenceJson = localStorage.getItem('margin-preference');
@@ -51,18 +47,16 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
       };
     }, [])
   );
-  useEffect(() => {
-    setContext({
-      items: marginPreference.currencyPairs.map((currencyPair) => ({
-        currency: currencyPair as CurrencyPair,
-        amount: marginPreference.amount,
-      })),
-      amount: marginPreference.amount,
-    });
-    const requests = marginPreference.currencyPairs.map((currencyPair) => ({
+  const [context, setContext] = useState<
+    Pick<AppContextType, 'items' | 'amount'>
+  >({
+    items: marginPreference.currencyPairs.map((currencyPair) => ({
       currency: currencyPair as CurrencyPair,
       amount: marginPreference.amount,
-    }));
+    })),
+    amount: marginPreference.amount,
+  });
+  useEffect(() => {
     // calling IPC exposed from preload script
     const unsubscribe = window.electron.ipcRenderer.on(
       'fetch-margin-response',
@@ -87,17 +81,40 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
         }));
       }
     );
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+  useEffect(() => {
+    setContext({
+      items: marginPreference.currencyPairs.map((currencyPair) => ({
+        currency: currencyPair as CurrencyPair,
+        amount: marginPreference.amount,
+      })),
+      amount: marginPreference.amount,
+    });
+    const requests = marginPreference.currencyPairs.map((currencyPair) => ({
+      currency: currencyPair,
+      amount: marginPreference.amount,
+    }));
     window.electron.ipcRenderer.sendMessage(
       'fetch-margin-request',
       ...requests
     );
-    return () => {
-      unsubscribe();
-    };
   }, [marginPreference]);
   const value = useMemo(() => {
     return {
       ...context,
+      setAmount: (amount: number) => {
+        setMarginPreference((pref) => {
+          const newPref = {
+            ...pref,
+            amount,
+          };
+          localStorage.setItem('margin-preference', JSON.stringify(newPref));
+          return newPref;
+        });
+      },
       addCurrencyPair: (currencyPair: CurrencyPair) => {
         setMarginPreference((pref) => {
           const newPref = {

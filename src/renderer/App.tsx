@@ -1,16 +1,39 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import { CurrencyPair } from 'types';
 import AppContext from './AppContext';
 
 function Margins() {
-  const { items, addCurrencyPair, removeCurrencyPair, update } =
-    useContext(AppContext);
+  const {
+    items,
+    amount,
+    setAmount,
+    addCurrencyPair,
+    removeCurrencyPair,
+    update,
+  } = useContext(AppContext);
+  const [amountStr, setAmountStr] = useState(amount.toString());
   return (
     <div>
       <div className="flex justify-between">
         <h1>最大注文数量</h1>
+      </div>
+      <div className="flex mb-2">
+        <label htmlFor="amount">
+          口座資産
+          <input
+            id="amount"
+            type="number"
+            value={amountStr}
+            onChange={(e) => {
+              setAmountStr(e.target.value);
+              if (!Number.isNaN(Number(e.target.value))) {
+                setAmount(Number(e.target.value));
+              }
+            }}
+          />
+        </label>
       </div>
       <div>
         <table>
