@@ -1,29 +1,33 @@
-import { Browser } from 'playwright';
+import { Page } from 'playwright';
+import { MarginRequest, MarginResult } from 'types';
 
-const fetchOanda = async ({
-  browser,
-  currency,
-}: {
-  browser: Browser;
-  currency: string;
-}) => {
-  const page = await browser.newPage();
+const fetchOanda = async (
+  page: Page,
+  { currency, amount }: MarginRequest
+): Promise<MarginResult> => {
   await page.goto('https://www.oanda.jp/lab-education/margin/');
   const frame = page.frameLocator('#oanda-widget-margin0');
   const form = frame.locator('.tab__inner form').nth(0);
   await form.locator('label').filter({ hasText: '法人' }).click();
-  await form.locator('#formulate-global-1').fill('1000000');
+  await form.locator('#formulate-global-1').fill(String(amount));
   await form.getByRole('combobox').selectOption(currency);
   await form.locator('#formulate-global-3').fill('1');
   await form.locator('label').filter({ hasText: '買い' }).click();
   await form.getByRole('button', { name: '現在のレートを取得' }).click();
   await form.getByRole('button', { name: '計算する' }).click();
-  const value = await frame
-    .locator('.simulator__results-inner table tr')
+  const rate = await form.locator('#formulate-global-4').inputValue();
+  const table = frame.locator('.simulator__results-inner table tr');
+  const maxLots = await table
     .nth(5)
     .locator('.simulator__results-value')
     .innerText();
-  return { lots: value };
+  return {
+    currency,
+    amount,
+    rate,
+    maxLots,
+    lastUpdated: new Date(),
+  };
 };
 
 export default fetchOanda;

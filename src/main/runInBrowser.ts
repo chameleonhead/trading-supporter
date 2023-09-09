@@ -1,9 +1,10 @@
-import { Browser, chromium } from 'playwright';
+import { Page, chromium } from 'playwright';
 
-const runInBrowser = async <T>(func: (browser: Browser) => Promise<T>) => {
-  const browser = await chromium.launch({ headless: true });
+const runInBrowser = async <T>(func: (page: Page) => Promise<T>) => {
+  const browser = await chromium.launch({ headless: false });
   try {
-    return await func.apply(undefined, [browser]);
+    const page = await browser.newPage();
+    return await func.apply(undefined, [page]);
   } finally {
     await browser.close();
   }

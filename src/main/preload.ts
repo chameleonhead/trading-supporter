@@ -2,7 +2,7 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-export type Channels = 'ipc-oanda-margin';
+type Channels = 'fetch-margin-request' | 'fetch-margin-response';
 
 const electronHandler = {
   ipcRenderer: {

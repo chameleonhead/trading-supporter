@@ -27,16 +27,14 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.on('ipc-oanda-margin', async (event) => {
-  const value = await runInBrowser((browser) =>
-    fetchOanda({ browser, currency: 'USD/JPY' })
-  );
-  console.log(value);
-  event.reply('ipc-oanda-margin', {
-    currency: 'USD/JPY',
-    ...value,
-    lastUpdated: new Date(),
-  });
+ipcMain.on('fetch-margin-request', async (event, ...args) => {
+  console.log('on-request', args);
+  if (args.length > 0) {
+    const results = await runInBrowser((page) => {
+      return Promise.all(args.map((req) => fetchOanda(page, req)));
+    });
+    event.reply('fetch-margin-response', ...results);
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
